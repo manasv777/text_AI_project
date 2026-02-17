@@ -41,3 +41,21 @@ X_test_vec = vectorizer.transform(X_test)
 print("Train shape:", X_train_vec.shape)
 print("Test shape:", X_test_vec.shape)
 print("Number of features:", len(vectorizer.get_feature_names_out()))
+
+model = LogisticRegression(max_iter=1000)
+
+model.fit(X_train_vec, y_train)
+
+y_pred = model.predict(X_test_vec)
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+
+#Printing the process out so you can see it live
+print("\n--- Test Predictions ---")
+for review, pred, actual in zip(X_test, y_pred, y_test):
+    pred_text = "Positive" if pred == 1 else "Negative"
+    actual_text = "Positive" if actual == 1 else "Negative"
+    print(f"Review: {review}")
+    print(f"Prediction: {pred_text}, Actual: {actual_text}\n")
+
+
