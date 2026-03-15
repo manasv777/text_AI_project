@@ -2,6 +2,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Reviews dataset
 reviews: list[str] = [
@@ -68,54 +71,28 @@ labels: list[int] = [
     0,  # Great cast but the movie was terrible
 ]
 
-X_train, X_test, y_train, y_test = train_test_split(reviews, labels, test_size=0.2, random_state=42, stratify=labels)
-print("Training data:", len(X_train))
-print("Testing data:", len(X_test))
+vectorizer = TfidfVectorizer(
+    ngram_range=(1,2),  # Unigrams and bigrams
+    stop_words='english',  # Remove common English stop words
+    sublinear_tf=True,  # Use sublinear term frequency scaling
+)
 
-##see if stratify worked correctly
-print("Train positives:", sum(y_train), "out of", len(y_train))
-print("Test positives:", sum(y_test), "out of", len(y_test))
+X_vec = vectorizer.fit_transform(reviews)
+model = LogisticRegression(penalty='l2', solver='liblinear', max_iter=1000, random_state=42, C=1)
 
-vectorizer = TfidfVectorizer(ngram_range=(1, 2))
-X_train_vec = vectorizer.fit_transform(X_train)
-X_test_vec = vectorizer.transform(X_test)
+scores = cross_val_score(model, X_vec, labels, cv=5)
 
-print("Train shape:", X_train_vec.shape)
-print("Test shape:", X_test_vec.shape)
-print("Number of features:", len(vectorizer.get_feature_names_out()))
+print("L2 Regularization Cross-Validation Scores:")
+print("=" * 60)
+print("Fold accuracies:", scores)
+print("Mean accuracy:", scores.mean())
+print("Std dev:", scores.std())
 
-model = LogisticRegression(max_iter=1000)
+model2 = LogisticRegression(penalty='l1', solver='liblinear', max_iter=1000, random_state=42, C=0.1)
+scores2 = cross_val_score(model2, X_vec, labels, cv=5)
 
-model.fit(X_train_vec, y_train)
-
-y_pred = model.predict(X_test_vec)
-accuracy = accuracy_score(y_test, y_pred)
-print("Accuracy:", accuracy)
-
-#Printing the process out so you can see it live
-print("\n--- Test Predictions ---")
-for review, pred, actual in zip(X_test, y_pred, y_test):
-    pred_text = "Positive" if pred == 1 else "Negative"
-    actual_text = "Positive" if actual == 1 else "Negative"
-    print(f"Review: {review}")
-    print(f"Prediction: {pred_text}, Actual: {actual_text}\n")
-
-#Understanding the behind the scenes
-feature_names = vectorizer.get_feature_names_out()
-print("\n--- Feature Names ---")
-print(feature_names)
-
-bias = model.intercept_[0]
-print(f"\nModel Bias (Intercept): {bias}")
-
-weights = model.coef_[0]
-print(f"Weights Length: {len(weights)}")
-
-#Pairs words learned with their corresponding weights
-word_weights = list(zip(feature_names, weights))
-
-word_weights_sorted = sorted(word_weights, key=lambda x: x[1], reverse=True)
-
-for word, weight in word_weights_sorted:
-    print(f"Word: {word}, Weight: {weight:+.4f}")
-
+print("L1 Regularization Cross-Validation Scores:")
+print("=" * 60)
+print("Fold accuracies:", scores2)
+print("Mean accuracy:", scores2.mean())
+print("Std dev:", scores2.std())

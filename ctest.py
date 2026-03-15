@@ -3,6 +3,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
+#C_values list for experiments
+C_values = [0.01, 0.1, 1, 10, 100]
+
 # Reviews dataset
 reviews: list[str] = [
     # Strong positives
@@ -72,11 +75,15 @@ X_train, X_test, y_train, y_test = train_test_split(reviews, labels, test_size=0
 print("Training data:", len(X_train))
 print("Testing data:", len(X_test))
 
-##see if stratify worked correctly
+#c=see if stratify worked correctly
 print("Train positives:", sum(y_train), "out of", len(y_train))
 print("Test positives:", sum(y_test), "out of", len(y_test))
 
-vectorizer = TfidfVectorizer(ngram_range=(1, 2))
+vectorizer = TfidfVectorizer(
+    ngram_range=(1, 2),
+    stop_words='english',
+    sublinear_tf=True
+    )
 X_train_vec = vectorizer.fit_transform(X_train)
 X_test_vec = vectorizer.transform(X_test)
 
@@ -84,38 +91,28 @@ print("Train shape:", X_train_vec.shape)
 print("Test shape:", X_test_vec.shape)
 print("Number of features:", len(vectorizer.get_feature_names_out()))
 
-model = LogisticRegression(max_iter=1000)
+for C in C_values:
+    print("\n" + "="*60)
+    print(f"C value: {C}")
 
-model.fit(X_train_vec, y_train)
+    model = LogisticRegression(max_iter=1000, C=C)
+    model.fit(X_train_vec, y_train)
 
-y_pred = model.predict(X_test_vec)
-accuracy = accuracy_score(y_test, y_pred)
-print("Accuracy:", accuracy)
+    train_pred = model.predict(X_train_vec)
+    test_pred = model.predict(X_test_vec)
 
-#Printing the process out so you can see it live
-print("\n--- Test Predictions ---")
-for review, pred, actual in zip(X_test, y_pred, y_test):
-    pred_text = "Positive" if pred == 1 else "Negative"
-    actual_text = "Positive" if actual == 1 else "Negative"
-    print(f"Review: {review}")
-    print(f"Prediction: {pred_text}, Actual: {actual_text}\n")
+    train_accuracy = accuracy_score(y_train, train_pred)
+    test_accuracy = accuracy_score(y_test, test_pred)
+    print("Train Accuracy:", f"{train_accuracy:.3f}")
+    print("Test Accuracy:", f"{test_accuracy:.3f}")
 
-#Understanding the behind the scenes
-feature_names = vectorizer.get_feature_names_out()
-print("\n--- Feature Names ---")
-print(feature_names)
-
-bias = model.intercept_[0]
-print(f"\nModel Bias (Intercept): {bias}")
-
-weights = model.coef_[0]
-print(f"Weights Length: {len(weights)}")
-
-#Pairs words learned with their corresponding weights
-word_weights = list(zip(feature_names, weights))
-
-word_weights_sorted = sorted(word_weights, key=lambda x: x[1], reverse=True)
-
-for word, weight in word_weights_sorted:
-    print(f"Word: {word}, Weight: {weight:+.4f}")
-
+    feature_names = vectorizer.get_feature_names_out()
+    weights = model.coef_[0]
+    word_weights = list(zip(feature_names, weights))
+    word_weights_sorted = sorted(word_weights, key=lambda x: x[1], reverse=True)
+    print("\nTop 10 Positive Words:")
+    for word, weight in word_weights_sorted[:10]:
+        print(f"Word: {word}, Weight: {weight:+.4f}")
+    print("\nTop 10 Negative Words:")
+    for word, weight in word_weights_sorted[-10:]:
+        print(f"Word: {word}, Weight: {weight:+.4f}")
