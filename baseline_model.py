@@ -4,7 +4,11 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import cross_val_score
 import warnings
+import numpy as np
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
+
 
 # Reviews dataset
 reviews: list[str] = [
@@ -78,21 +82,14 @@ vectorizer = TfidfVectorizer(
 )
 
 X_vec = vectorizer.fit_transform(reviews)
-model = LogisticRegression(penalty='l2', solver='liblinear', max_iter=1000, random_state=42, C=1)
-
+model = LogisticRegression(penalty='l1', solver='liblinear', max_iter=1000, random_state=42, C=3)
 scores = cross_val_score(model, X_vec, labels, cv=5)
 
-print("L2 Regularization Cross-Validation Scores:")
+print("L1 Regularization Cross-Validation Scores:")
 print("=" * 60)
 print("Fold accuracies:", scores)
 print("Mean accuracy:", scores.mean())
 print("Std dev:", scores.std())
 
-model2 = LogisticRegression(penalty='l1', solver='liblinear', max_iter=1000, random_state=42, C=0.1)
-scores2 = cross_val_score(model2, X_vec, labels, cv=5)
-
-print("L1 Regularization Cross-Validation Scores:")
-print("=" * 60)
-print("Fold accuracies:", scores2)
-print("Mean accuracy:", scores2.mean())
-print("Std dev:", scores2.std())
+model.fit(X_vec, labels)
+print("Non-zero features:", np.sum(model.coef_ != 0))
