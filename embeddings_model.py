@@ -87,7 +87,7 @@ vectorizer = TfidfVectorizer(
 )
 
 X_vec = vectorizer.fit_transform(reviews)
-model = LogisticRegression(penalty='l2', solver='liblinear', max_iter=1000, random_state=42, C=3)
+model = LogisticRegression(penalty='l2', solver='liblinear', max_iter=1000, random_state=42, C=1)
 scores = cross_val_score(model, X, labels, cv=5)
 
 print("Embeddings  Cross-Validation Scores:")
