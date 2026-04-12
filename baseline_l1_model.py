@@ -5,6 +5,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import cross_val_score
 import warnings
 import numpy as np
+from sentence_transformers import SentenceTransformer
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
